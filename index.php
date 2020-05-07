@@ -15,6 +15,20 @@ class MyDB extends SQLite3 {
     exit();
  } 
 $app = new \Slim\App;
+
+$app->get(
+    '/friends',
+    function (Request $request, Response $response, array $args) use ($db) {
+        $sql = "select * from participant";
+        $ret = $db->query($sql);
+        $friends = [];
+        while ($friend = $ret->fetchArray(SQLITE3_ASSOC)) {
+            $friends[] = $friend;
+        }
+        return $response->withJson($friends);
+    }
+);
+
 $app->get(
     '/friends/{id}',
     function (Request $request, Response $response, array $args) use ($db) {
@@ -35,11 +49,10 @@ $app->post(
         if (!isset($requestData['name']) || !isset($requestData['surname'])) {
             return $response->withStatus(400)->withJson(['error' => 'Name and surname are required.']);
         }
-        $sql = "insert into 'friend' (name, surname, email) values (:name, :surname, :email)";
+        $sql = "insert into 'participant' (name, surname) values (:name, :surname)";
         $stmt = $db->prepare($sql);
         $stmt->bindValue('name', $requestData['name']);
         $stmt->bindValue('surname', $requestData['surname']);
-        $stmt->bindValue('email', isset($requestData['email']) ? $requestData['email'] : '');
         $stmt->execute();
         $newUserId = $db->lastInsertRowID();
         return $response->withStatus(201)->withHeader('Location', "/friends/$newUserId");
